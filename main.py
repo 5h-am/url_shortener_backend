@@ -1,9 +1,6 @@
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.backends import default_backend
-import base64
 import os
 import csv
+import string
 
 
 def databaseReading () :
@@ -24,9 +21,9 @@ def urlChecking (url) :
     data = databaseReading()
     if (data == None) :
         return None
-    for i in range(0,len(data),1):
-        dataUrl = data[i]["url"]
-        dataEncryptedUrl = data[i]["encryptedUrl"]
+    for row in data:
+        dataUrl = row["url"]
+        dataEncryptedUrl = row["encryptedUrl"]
         if (dataUrl == url) :
             return dataEncryptedUrl
     return None
@@ -34,35 +31,33 @@ def urlChecking (url) :
         
 
 def urlShortening () :
-    url = input("Enter a url : ").encode()
-    salt = os.urandom(4)
+    url = input("Enter a url : ")
+    url_int = int.from_bytes(url.encode(),byteorder="big")
+    temp = []
+    base62 = string.digits+string.ascii_lowercase+string.ascii_uppercase
 
-    kdf = PBKDF2HMAC(
-        algorithm=hashes.SHA256(),
-        length=8,
-        salt=salt,
-        iterations=10000,
-        backend=default_backend()
-    )
-    encryptedUrl = base64.urlsafe_b64encode(kdf.derive(url)).rstrip(b"=")
-    return encryptedUrl, url 
+    while (url_int > 0) :
+        url_int, rem = divmod(url_int,62)
+        temp.append(base62[rem])
+    encryptedUrl = "".join(temp)
+    return encryptedUrl[0:6], url 
 
 
 def databaseWriting () :
     encryptedUrl, url = urlShortening()
-    urlCheck = urlChecking(url.decode())
-    link = "https://5ham/"
+    urlCheck = urlChecking(url)
+    link = "https://5ham.com/"
     if not urlCheck:
-        print(f"\nShortened Link :- {link + encryptedUrl.decode()}")          
+        print(f"\nShortened Link :- {link + encryptedUrl}")          
         if (os.path.exists("urlDatabase.csv")) :
             with open("urlDatabase.csv", "a", newline="")as file:
                 writer = csv.DictWriter(file, fieldnames=["encryptedUrl", "url"])
-                writer.writerow({"encryptedUrl":encryptedUrl.decode(),"url":url.decode()})
+                writer.writerow({"encryptedUrl":encryptedUrl,"url":url})
         else :
             with open("urlDatabase.csv", "w", newline="")as file:
                 writer = csv.DictWriter(file, fieldnames=["encryptedUrl", "url"])
                 writer.writeheader()
-                writer.writerow({"encryptedUrl":encryptedUrl.decode(),"url":url.decode()})
+                writer.writerow({"encryptedUrl":encryptedUrl,"url":url})
     else :
         print(f"\nShortened Link :- {link+urlCheck}")
 
@@ -72,10 +67,10 @@ def gettingUrl() :
     if (not data) :
         return None
     shortenedUrl = input("Enter your shortened Url : ")
-    encrypedUrl = shortenedUrl.removeprefix("https://5ham/")
-    for i in range(0,len(data),1):
-        dataUrl = data[i]["url"]
-        dataEncryptedUrl = data[i]["encryptedUrl"]
+    encrypedUrl = shortenedUrl.removeprefix("https://5ham.com/")
+    for row in data:
+        dataUrl = row["url"]
+        dataEncryptedUrl = row["encryptedUrl"]
         if (dataEncryptedUrl == encrypedUrl) :
             return dataUrl
     return None
@@ -96,6 +91,7 @@ while True:
             raise ValueError
     except ValueError as e :
         print("\nInvalid Input ",e)
+        continue 
     if choice == 1:
         databaseWriting()
     elif choice == 2 :
