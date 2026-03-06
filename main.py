@@ -1,6 +1,7 @@
 import os
 import csv
 import string
+import time
 
 
 def databaseReading () :
@@ -8,9 +9,11 @@ def databaseReading () :
         if os.path.exists("urlDatabase.csv"):
             urlData = []
             with open("urlDatabase.csv", "r") as f:
-                reader = csv.DictReader(f)
+                reader = csv.reader(f)
                 for row in reader :
                     urlData.append(row)
+                if not urlData:
+                    return None
                 return urlData
     except FileNotFoundError :
         print("File not found")
@@ -21,9 +24,9 @@ def urlChecking (url) :
     data = databaseReading()
     if (data == None) :
         return None
-    for row in data:
-        dataUrl = row["url"]
-        dataEncryptedUrl = row["encryptedUrl"]
+    for row in data: 
+        dataEncryptedUrl = row[0]
+        dataUrl = row[1]
         if (dataUrl == url) :
             return dataEncryptedUrl
     return None
@@ -49,17 +52,12 @@ def databaseWriting () :
     link = "https://5ham.com/"
     if not urlCheck:
         print(f"\nShortened Link :- {link + encryptedUrl}")          
-        if (os.path.exists("urlDatabase.csv")) :
-            with open("urlDatabase.csv", "a", newline="")as file:
-                writer = csv.DictWriter(file, fieldnames=["encryptedUrl", "url"])
-                writer.writerow({"encryptedUrl":encryptedUrl,"url":url})
-        else :
-            with open("urlDatabase.csv", "w", newline="")as file:
-                writer = csv.DictWriter(file, fieldnames=["encryptedUrl", "url"])
-                writer.writeheader()
-                writer.writerow({"encryptedUrl":encryptedUrl,"url":url})
+        with open("urlDatabase.csv", "a", newline="")as file:
+            writer = csv.writer(file)
+            writer.writerow([encryptedUrl,url])
     else :
-        print(f"\nShortened Link :- {link+urlCheck}")
+        print("\nYou have already shortened this link")
+        print(f"Shortened Link :- {link+urlCheck}")
 
 
 def gettingUrl() :
@@ -68,9 +66,9 @@ def gettingUrl() :
         return None
     shortenedUrl = input("Enter your shortened Url : ")
     encrypedUrl = shortenedUrl.removeprefix("https://5ham.com/")
-    for row in data:
-        dataUrl = row["url"]
-        dataEncryptedUrl = row["encryptedUrl"]
+    for row in data:  
+        dataEncryptedUrl = row[0]
+        dataUrl = row[1]
         if (dataEncryptedUrl == encrypedUrl) :
             return dataUrl
     return None
@@ -94,12 +92,16 @@ while True:
         continue 
     if choice == 1:
         databaseWriting()
+        time.sleep(2)      
     elif choice == 2 :
         yourUrl = gettingUrl()
         if (yourUrl) :
             print(f"\nYour Original URL :- {yourUrl}")
+        else :
+            print("Sorry, This doesn't match with any orignal link")
+        time.sleep(2)
     elif choice == 3 :
+        print("Goodbye, Have a nice day")
         break
-
 
 
