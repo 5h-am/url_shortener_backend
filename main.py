@@ -33,13 +33,17 @@ def counter_reading () :
 
 def urlShortening () :
     url = input("Enter a url : ")
+    if not url.startswith("https://") :
+        print("Error, Only URLs are allowed")
+        return None, None
     count = int(counter_reading())
     count += 1
     counter_writing(count)
     temp = []
-    base62 = string.ascii_lowercase+string.ascii_uppercase+string.digits
-    while (count > 0) :
-        count, rem = divmod(count,62)
+    base62 = string.digits+string.ascii_lowercase+string.ascii_uppercase
+    num = count
+    while (num > 0) :
+        num, rem = divmod(num,62)
         temp.append(base62[rem])
     encryptedUrl = "".join(reversed(temp)) 
     return encryptedUrl, url 
@@ -47,10 +51,11 @@ def urlShortening () :
 
 def databaseWriting () :
     encryptedUrl, url = urlShortening()
-    print(f"\nShortened Link :- {domain_name+ encryptedUrl}")          
-    with open("urlDatabase.csv", "a", newline="")as file:
-        writer = csv.writer(file)
-        writer.writerow([encryptedUrl,url])
+    if encryptedUrl:
+        print(f"\nShortened Link :- {domain_name+ encryptedUrl}")          
+        with open("urlDatabase.csv", "a", newline="")as file:
+            writer = csv.writer(file)
+            writer.writerow([encryptedUrl,url])
 
 
 
