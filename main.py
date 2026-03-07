@@ -16,7 +16,7 @@ def databaseReading () :
             return urlData
     except FileNotFoundError :
         print("File not found")
-        return None
+        return []
     
 
 def counter_writing (count) :
@@ -33,15 +33,13 @@ def counter_reading () :
 
 def urlShortening () :
     url = input("Enter a url : ")
-    previous_count = counter_reading()
-    now_count = int(previous_count)
-    counter_writing(now_count+1)
+    count = int(counter_reading())
+    count += 1
+    counter_writing(count)
     temp = []
     base62 = string.ascii_lowercase+string.ascii_uppercase+string.digits
-    if now_count == 0:
-        temp.append(base62[0])
-    while (now_count > 0) :
-        now_count, rem = divmod(now_count,62)
+    while (count > 0) :
+        count, rem = divmod(count,62)
         temp.append(base62[rem])
     encryptedUrl = "".join(reversed(temp)) 
     return encryptedUrl, url 
@@ -58,8 +56,6 @@ def databaseWriting () :
 
 def gettingUrl() :
     data = databaseReading()
-    if (not data) :
-        return None
     shortenedUrl = input("Enter your shortened Url : ")
     encrypedUrl = shortenedUrl.removeprefix(domain_name)
     for row in data:  
