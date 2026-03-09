@@ -2,31 +2,31 @@ import os
 import csv
 import string
 import time
+import sqlite3
 
 domain_name = "https://5h-am.com/"
-def databaseReading () :
+def databaseReading (short_url) :
     try:
-        urlData = []
-        with open("urlDatabase.csv", "r") as f:
-            reader = csv.reader(f)
-            for row in reader :
-                urlData.append(row)
-            if not urlData:
-                return []
-            return urlData
+        with sqlite3.connect("database.db")as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT url FROM url_records WHERE short_url == ?",(short_url,))
+            result = cursor.fetchone()
+            if result:
+                return result[0]
+            return None
     except FileNotFoundError :
         print("File not found")
-        return []
+        return None
     
 
-def counter_writing (count) :
-    with open("counter.txt","w")as f:
-        f.write(str(count))
+
 
 def counter_reading () :
-    if os.path.exists("counter.txt"):
-        with open("counter.txt", "r")as f:
-            count = f.read()
+    if os.path.exists("database.db"):
+        with sqlite3.connect("database.db") as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT MAX(id) FROM url_records")
+            count = cursor.fetchone()[0]
             return count
     else :
         return 0  
@@ -36,9 +36,8 @@ def urlShortening () :
     if not url.startswith("https://") :
         print("Error, Only URLs are allowed")
         return None, None
-    count = int(counter_reading())
+    count = counter_reading()
     count += 1
-    counter_writing(count)
     temp = []
     base62 = string.digits+string.ascii_lowercase+string.ascii_uppercase
     num = count
@@ -53,24 +52,17 @@ def databaseWriting () :
     encryptedUrl, url = urlShortening()
     if encryptedUrl:
         print(f"\nShortened Link :- {domain_name+ encryptedUrl}")          
-        with open("urlDatabase.csv", "a", newline="")as file:
-            writer = csv.writer(file)
-            writer.writerow([encryptedUrl,url])
+        with sqlite3.connect("database.db") as conn:
+            cursor = conn.cursor()
+            conn.execute("INSERT INTO url_records (short_url, url) VALUES(?,?)",(encryptedUrl,url))
+            conn.commit()
 
-
-
-def gettingUrl() :
-    data = databaseReading()
+def gettingUrl() :   
     shortenedUrl = input("Enter your shortened Url : ")
-    encrypedUrl = shortenedUrl.removeprefix(domain_name)
-    for row in data:  
-        dataEncryptedUrl = row[0]
-        dataUrl = row[1]
-        if (dataEncryptedUrl == encrypedUrl) :
-            return dataUrl
-    return None
-
-    
+    encryptedUrl = shortenedUrl.removeprefix(domain_name)
+    data = databaseReading(encryptedUrl)
+    return data
+ 
 while True:
     print()
     print("-"*100)
