@@ -8,7 +8,7 @@ CORS(app)
 
 
 
-domain_name = "http://127.0.0.1:5000/5ham/"
+domain_name = "https://url-shortener-backend-b41o.onrender.com/5ham/"
 
 def init_db():
     with sqlite3.connect("database.db") as conn:
